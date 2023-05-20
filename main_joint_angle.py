@@ -3,27 +3,17 @@ import mediapipe as mp
 import numpy as np
 import os
 
-# 주요 관절 8개 list
-angle_elbow_r_idx = []
-angle_shoulder_r_idx = []
-angle_hip_r_idx = []
-angle_knee_r_idx = []
-angle_elbow_l_idx = []
-angle_shoulder_l_idx = []
-angle_hip_l_idx = []
-angle_knee_l_idx = []
 
-
-def init_media_pipe():
+def init_media_pipe(video_path):
     # mediapipe pose 초기화
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
 
     # 동영상 파일 열기
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = "허리_정답.mp4"
-    folder_name = "video"
-    video_path = os.path.join(current_dir, folder_name, file_name)
+    #current_dir = os.path.dirname(os.path.abspath(__file__))
+    # file_name = "다리1.mp4"
+    # folder_name = "ROM_datasets"
+    #video_path = os.path.join(current_dir, folder_name, file_name)
     cap = cv2.VideoCapture(video_path)
 
     # 동영상 파일의 프레임 수, 프레임 크기 가져오기
@@ -36,12 +26,6 @@ def init_media_pipe():
 
     return cap, mp_pose, mp_drawing, out
 
-# def Shoulder_Cor(User_angle_shoulder_r_idx, Expert_max_R_shoulder, Expert_min_R_shoulder):
-#     for i in range(len(User_angle_shoulder_r_idx)):
-#         if User_angle_shoulder_r_idx[i] < Expert_min_R_shoulder and User_angle_shoulder_r_idx[i] > Expert_max_R_shoulder:
-#             print('가동범위 맞아?? ㄹㅇ? ')
-#             break
-#     print('가동범위 ㅇㅈ ㄱㅊ음')
 
 def calculate_angle(a, b, c):
     a = np.array(a)  # First
@@ -58,6 +42,14 @@ def calculate_angle(a, b, c):
 
 
 def Joint_List(cap, mp_pose, mp_drawing, out):
+    angle_elbow_r_idx = []
+    angle_shoulder_r_idx = []
+    angle_hip_r_idx = []
+    angle_knee_r_idx = []
+    angle_elbow_l_idx = []
+    angle_shoulder_l_idx = []
+    angle_hip_l_idx = []
+    angle_knee_l_idx = []
     # MediaPipe Pose 실행
     with mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5, model_complexity=2) as pose:
         while cap.isOpened():
@@ -171,7 +163,7 @@ def Joint_List(cap, mp_pose, mp_drawing, out):
             # 결과 동영상 파일에 추가
             out.write(annotated_frame)
 
-    angle_List = [[]*8]
+    angle_List = [[] for _ in range(8)]
     angle_List[0] = angle_elbow_r_idx
     angle_List[1] = angle_shoulder_r_idx
     angle_List[2] = angle_hip_r_idx
@@ -184,37 +176,56 @@ def Joint_List(cap, mp_pose, mp_drawing, out):
     return angle_List
 
 
-def save_joint_list():
-    f = open('angle_어깨.txt', 'w')
+# def save_joint_list():
+#     f = open('angle_어깨.txt', 'w')
+#
+#     for i in range(len(angle_elbow_r_idx)):
+#         f.write('{{Frame : {} , r_elbow : {} , l_elbow : {} , r_shoulder : {} ,'
+#                 'l_shoulder : {} , r_hip : {} , l_hip : {} , r_knee : {} , l_knee : {} }}\n'
+#         .format(
+#             i + 1, angle_elbow_r_idx[i], angle_elbow_l_idx[i], angle_shoulder_r_idx[i], angle_shoulder_l_idx[i],
+#                 angle_hip_r_idx[i], angle_hip_l_idx[i], angle_knee_r_idx[i], angle_knee_l_idx[i]))
+#
+#     f.close()
 
-    for i in range(len(angle_elbow_r_idx)):
-        f.write('{{Frame : {} , r_elbow : {} , l_elbow : {} , r_shoulder : {} ,'
-                'l_shoulder : {} , r_hip : {} , l_hip : {} , r_knee : {} , l_knee : {} }}\n'
-        .format(
-            i + 1, angle_elbow_r_idx[i], angle_elbow_l_idx[i], angle_shoulder_r_idx[i], angle_shoulder_l_idx[i],
-                angle_hip_r_idx[i], angle_hip_l_idx[i], angle_knee_r_idx[i], angle_knee_l_idx[i]))
 
-    f.close()
-
-def Joint_Range_is_OK(exercise):   ### consider_joint 는 main_jointangle 파일의 Joint_Range_is_OK 함수에서 return T / F 값으로 도출.
+def Joint_Range_is_OK(exercise, video_path):   ### consider_joint 는 main_jointangle 파일의 Joint_Range_is_OK 함수에서 return T / F 값으로 도출.
     # consider_joint : 고려할 관절의 개수
     # TF : 관절이 가동 범위 내에 존재 하는지 아닌지
     # Alpha : 고려하는 관절에 따른 운동별 정확도 가중치
 
-    # 초기화
-    cap, mp_pose, mp_drawing, out = init_media_pipe()
+    consider_joint = 0
+    TF = 0
+    out_of_range = []
 
-    # 주요 관절 8개 list up
-    angle_List = Joint_List(cap, mp_pose, mp_drawing, out)
+    if exercise == 1: #버드독
+        consider_joint = 2
 
+        cap_i, mp_pose_i, mp_drawing_i, out_i = init_media_pipe(video_path)
+        angle_List_i = Joint_List(cap_i, mp_pose_i, mp_drawing_i, out_i)
 
-    if exercise == 1:
-        ### 해당 운동에서 주요하게 고려할 관절의 가동범위
+        ### 해당 운동에서 주요하게 고려할 관절의 가동범위 체크
+        if abs(max(angle_List_i[1]) - 160) <= 5 and abs(max(angle_List_i[5]) - 163) <= 5: #어깨 각도
+            TF += 1
+        else:
+            out_of_range.append('어깨 범위 넘어감')
+
+        if abs(max(angle_List_i[3]) - 166) <= 5 and abs(max(angle_List_i[7]) - 171) <= 5: #무릎 각도
+            TF += 1
+        else:
+            out_of_range.append('무릎 범위 넘어감')
+
+    elif exercise == 2: #허리운동
         consider_joint = 1
-        if angle_List[3] < 170 and angle_List[7] < 170:
-            TF = 1
-            print('TF 까지 들어옴')
 
+        cap_i, mp_pose_i, mp_drawing_i, out_i = init_media_pipe(video_path)
+        angle_List_i = Joint_List(cap_i, mp_pose_i, mp_drawing_i, out_i)
+
+        ### 해당 운동에서 주요하게 고려할 관절의 가동범위 체크
+        if 168 <= min(angle_List_i[7]): #무릎 각도
+            TF += 1
+        else:
+            out_of_range.append('무릎 범위 넘어감')
 
     if consider_joint == 1:
         Alpha = 0.3
@@ -223,30 +234,49 @@ def Joint_Range_is_OK(exercise):   ### consider_joint 는 main_jointangle 파일
     elif consider_joint == 3:
         Alpha = 0.2
 
-
-    cap.release()
-    out.release()
+    # cap.release()
+    # out.release()
     cv2.destroyAllWindows()
 
-    return TF, Alpha
+    return TF, consider_joint, Alpha, out_of_range
 
 
-if __name__ == '__main__':
+
+
+def joint_angle_list():
     # 초기화
     cap, mp_pose, mp_drawing, out = init_media_pipe()
+
+    # 주요 관절 8개 list
+    angle_List = [[] for _ in range(8)]
+    angle_elbow_r_idx = []
+    angle_shoulder_r_idx = []
+    angle_hip_r_idx = []
+    angle_knee_r_idx = []
+    angle_elbow_l_idx = []
+    angle_shoulder_l_idx = []
+    angle_hip_l_idx = []
+    angle_knee_l_idx = []
 
     # 주요 관절 8개 list up
     angle_List = Joint_List(cap, mp_pose, mp_drawing, out)
 
-    print('angle_List : ', angle_List)
-
-    # 주요 관절 8개 list save
-    #save_joint_list()
+    return angle_List
 
 
 
+if __name__ == '__main__':
+    print('운동종목 : ')
+    exercise = int(input())
 
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_name = "허리_정답.mp4"
+    print("사용자 영상 : {}".format(file_name))
+    folder_name = "video"
+    video_path = os.path.join(current_dir, folder_name, file_name)
 
-    cap.release()
-    out.release()
+    TF, Alpha, consider_joint, out_of_range = Joint_Range_is_OK(exercise, video_path)
+
+    print("TF : {}\nAlpha : {}\nout_of_range:{}".format(TF, Alpha, out_of_range))
+
     cv2.destroyAllWindows()
