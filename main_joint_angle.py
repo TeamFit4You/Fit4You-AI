@@ -196,7 +196,7 @@ def Joint_Range_is_OK(exercise, video_path):   ### consider_joint 는 main_joint
 
     consider_joint = 0
     TF = 0
-    out_of_range = []
+    feedback = ''
 
     if exercise == 1: #버드독
         consider_joint = 2
@@ -208,12 +208,12 @@ def Joint_Range_is_OK(exercise, video_path):   ### consider_joint 는 main_joint
         if abs(max(angle_List_i[1]) - 160) <= 5 and abs(max(angle_List_i[5]) - 163) <= 5: #어깨 각도
             TF += 1
         else:
-            out_of_range.append('어깨 범위 넘어감')
+            feedback += "어깨 각도에 유의하세요!\n"
 
         if abs(max(angle_List_i[3]) - 166) <= 5 and abs(max(angle_List_i[7]) - 171) <= 5: #무릎 각도
             TF += 1
         else:
-            out_of_range.append('무릎 범위 넘어감')
+            feedback += "무릎 각도에 유의하세요!\n"
 
     elif exercise == 2: #허리운동
         consider_joint = 1
@@ -225,7 +225,7 @@ def Joint_Range_is_OK(exercise, video_path):   ### consider_joint 는 main_joint
         if 168 <= min(angle_List_i[7]): #무릎 각도
             TF += 1
         else:
-            out_of_range.append('무릎 범위 넘어감')
+            feedback += "무릎 각도에 유의하세요!\n"
 
     if consider_joint == 1:
         Alpha = 0.3
@@ -238,7 +238,7 @@ def Joint_Range_is_OK(exercise, video_path):   ### consider_joint 는 main_joint
     # out.release()
     cv2.destroyAllWindows()
 
-    return TF, consider_joint, Alpha, out_of_range
+    return TF, consider_joint, Alpha, feedback
 
 
 

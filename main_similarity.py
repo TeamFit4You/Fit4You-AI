@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     #================================= input : exercise_id, filepath
 
-    TF, consider_joint, alpha, out_of_range = main_joint_angle.Joint_Range_is_OK(exercise, video_path2)
+    TF, consider_joint, alpha, feedback = main_joint_angle.Joint_Range_is_OK(exercise, video_path2)
     DTW_Alpha = consider_joint * alpha
     JA_Alpha = TF * alpha
 
@@ -141,8 +141,8 @@ if __name__ == '__main__':
     print("최종 정확도 : {}".format(ACC))
 
     data = {
-        "Accuracy": ACC,
-        "Feedback_str": out_of_range
+        "accuracy": ACC,
+        "feedback": feedback
     }
 
     json_data = json.dumps(data)
